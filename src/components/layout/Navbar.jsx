@@ -1,0 +1,22 @@
+function Navbar() {
+  return (
+    <header
+      className="
+      bg-white
+      shadow
+      p-4
+      "
+    >
+      <h1
+        className="
+        text-xl
+        font-bold
+        "
+      >
+        Student Dashboard Hub
+      </h1>
+    </header>
+  );
+}
+
+export default Navbar;
