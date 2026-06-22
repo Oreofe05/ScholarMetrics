@@ -6,8 +6,7 @@ const courses = 6
 
 function Dashboard(){
     return(
-        <div className="grid grid-cols-3 gap-4">
-            <StatCard
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">            <StatCard
                 title = "CGPA"
                 value =  {cgpa}
             />

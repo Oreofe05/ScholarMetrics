@@ -26,7 +26,7 @@ function AddCourseForm({
       onChange={(e) =>
         setCourseCode(e.target.value.toUpperCase())
       }
-      className="w-full border rounded-xl p-3"
+      className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-indigo-400 outline-none"
     />
 
     <input
@@ -38,7 +38,7 @@ function AddCourseForm({
       onChange={(e) =>
         setCourseUnit(e.target.value)
       }
-      className="w-full border rounded-xl p-3"
+      className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-indigo-400 outline-none"
     />
 
     <select

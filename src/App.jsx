@@ -1,19 +1,14 @@
 import Navbar from "./components/Navbar"
-import Sidebar from "./components/Sidebar"
-import Dashboard from "./components/Dashboard"
 import CGPATracker from "./components/CGPATracker"
+import AssignmentTracker from "./components/AssignmentTracker";
 function App() {
-
   return (
     <>
-    <Navbar/>
-    <Sidebar/>
-    <Dashboard/>
-    <CGPATracker/>
-    <h1>Hello Student dashboard</h1>
+      <Navbar />
+      <CGPATracker />
+      <AssignmentTracker/>
     </>
   )
-
 }
 
 export default App
