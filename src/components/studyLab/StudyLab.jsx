@@ -66,48 +66,81 @@ setExamDate("");
 
 // Upload materials
 const uploadMaterials = () => {
-if (!selectedCourse) {
-alert("Select a course");
-return;
-}
+  if (!selectedCourse) {
+    alert("Select a course");
+    return;
+  }
 
-if (selectedFiles.length === 0) {
-  alert("Choose files");
-  return;
-}
+  if (selectedFiles.length === 0) {
+    alert("Choose files");
+    return;
+  }
 
-setUploadedCourses((prev) =>
-  prev.map((course) => {
-    if (
-      String(course.id) !==
-      selectedCourse
-    ) {
-      return course;
-    }
+  // Store file information
+  const uploadedMaterialData =
+    selectedFiles.map((file) => ({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    }));
 
-    return {
-      ...course,
-      materials: [
-        ...(course.materials || []),
-        ...selectedFiles.map(
-          (file) => ({
-            name: file.name,
-            size: file.size,
-            type: file.type,
-          })
-        ),
-      ],
-    };
-  })
-);
+  // Generate topics from filenames
+  const generatedTopics =
+    selectedFiles.map((file) =>
+      file.name
+        .replace(".pdf", "")
+        .replace(".doc", "")
+        .replace(".docx", "")
+        .replace(".ppt", "")
+        .replace(".pptx", "")
+    );
 
-setSelectedFiles([]);
-setSelectedCourse("");
+  // Simple difficulty estimation
+  let difficulty = "Easy";
 
-alert(
-  "Materials uploaded successfully"
-);
+  if (generatedTopics.length >= 5) {
+    difficulty = "Medium";
+  }
 
+  if (generatedTopics.length >= 10) {
+    difficulty = "Hard";
+  }
+
+  // Estimate reading hours
+  const estimatedHours =
+    generatedTopics.length * 2;
+
+  setUploadedCourses((prev) =>
+    prev.map((course) =>
+      String(course.id) ===
+      String(selectedCourse)
+        ? {
+            ...course,
+
+            materials: [
+              ...(course.materials || []),
+              ...uploadedMaterialData,
+            ],
+
+            generatedTopics: [
+              ...(course.generatedTopics || []),
+              ...generatedTopics,
+            ],
+
+            difficulty,
+
+            estimatedHours,
+          }
+        : course
+    )
+  );
+
+  setSelectedFiles([]);
+  setSelectedCourse("");
+
+  alert(
+    "Materials analyzed successfully"
+  );
 };
 
 const calculateDaysRemaining = (
@@ -281,6 +314,18 @@ return ( <div className="space-y-6">
                     course.courseName
                   }
                 </p>
+
+                  <p className="text-blue-600 font-medium">
+                    Difficulty:
+                    {" "}
+                    {course.difficulty || "Not analyzed"}
+                  </p>
+
+                  <p className="text-green-600 font-medium">
+                    Estimated Hours:
+                    {" "}
+                    {course.estimatedHours || 0}
+                  </p>
 
                 <p className="text-blue-600 font-semibold">
                   Exam in:
