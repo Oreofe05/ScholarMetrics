@@ -35,24 +35,18 @@ return;
 
 
   const newCourse = {
-    id: Date.now(),
-    courseCode,
-    courseName,
-    examDate,
+  id: Date.now(),
+  courseCode,
+  courseName,
+  examDate,
 
-    materials: [],
+  materials: [],
+  generatedTopics: [],
+  difficulty: "",
+  estimatedHours: 0,
+};
 
-    generatedTopics: [],
-
-    difficulty: "",
-
-    estimatedHours: 0,
-
-    examDate: "",
-
-    daysRemaining: 0,
-  };
-
+console.log(newCourse);
 setUploadedCourses([
   ...uploadedCourses,
   newCourse,

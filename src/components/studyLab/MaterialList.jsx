@@ -24,8 +24,26 @@ function MaterialList({
             )
           )}
 
-        </ul>
-      )}
+            </ul>
+                )}
+
+                {course.generatedTopics?.length > 0 && (
+            <div className="mt-3">
+                <h5 className="font-semibold">
+                Generated Topics
+                </h5>
+
+                <ul className="list-disc ml-5 text-sm">
+                {course.generatedTopics.map(
+                    (topic, index) => (
+                    <li key={index}>
+                        {topic}
+                    </li>
+                    )
+                )}
+                </ul>
+  </div>
+)}  
 
     </div>
   );

@@ -38,12 +38,14 @@ function Sidebar() {
     <aside
       className="
       w-64
-      min-h-screen
+      h-screen
       bg-slate-900
       text-white
       p-5
       hidden
       md:block
+      sticky
+      top-0
       "
     >
       <h1
