@@ -1,377 +1,349 @@
 import { useState } from "react";
-import useLocalStorage from "../../hooks/useLocalStorage";
+import { useApp } from "../../context/AppContext";
+import StudyDashboard from "./StudyDashboard";
+import { extractPDFText } from "../../utils/pdfExtractor";
+import { analyzeMaterial } from "../../utils/analyzeMaterial";
+import AddCourse from "./AddCourse";
+import UploadMaterials from "./UploadMaterials";
+import UploadedCourses from "./UploadedCourses";
+import { generateStudyPlan } from "../../utils/generateStudyPlan";
+import StudyOverview from "./StudyOverview";
+import { initializeProgress } from "../../utils/progressUtils";
+import CourseFilter from "./CourseFilter";
+import MasterTimetable from "./MasterTimetable";
+import { generateTimetable } from "../../utils/generateTimetable";
+import { BookOpen, Sparkles } from "lucide-react";
 
 function StudyLab() {
-const [courseName, setCourseName] =
-useState("");
+  // Form State
+  const [courseName, setCourseName] = useState("");
+  const [courseCode, setCourseCode] = useState("");
+  const [examDate, setExamDate] = useState("");
 
-const [examDate, setExamDate] =
-  useState("");
+  // Upload Selection State
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
-const [courseCode, setCourseCode] =
-useState("");
+  // Search, Filter & Sorting
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("Newest");
 
-const [selectedCourse, setSelectedCourse] =
-useState("");
+  // Edit Course State
+  const [editingCourse, setEditingCourse] = useState(null);
 
-const [selectedFiles, setSelectedFiles] =
-useState([]);
+  // App Context
+  const { uploadedCourses, setUploadedCourses } = useApp();
 
-const [uploadedCourses, setUploadedCourses] =
-useLocalStorage(
-"uploadedCourses",
-[]
-);
+  // ===============================
+  // Add New Course
+  // ===============================
+  const addCourse = () => {
+    if (!courseName.trim() || !courseCode.trim()) {
+      alert("Please fill in all required course fields.");
+      return;
+    }
 
-// Add new course
-const addCourse = () => {
-if (
-!courseName.trim() ||
-!courseCode.trim()
-) {
-alert("Fill all fields");
-return;
-}
+    const newCourse = {
+      id: Date.now(),
+      courseCode,
+      courseName,
+      examDate,
+      createdAt: new Date().toISOString(),
+      materials: [],
+      generatedTopics: [],
+      analysis: [],
+      wordCount: 0,
+      estimatedPages: 0,
+      estimatedHours: 0,
+      difficulty: "Not analyzed",
+    };
 
+    setUploadedCourses((prev) => [...prev, newCourse]);
 
-  const newCourse = {
-  id: Date.now(),
-  courseCode,
-  courseName,
-  examDate,
+    setCourseName("");
+    setCourseCode("");
+    setExamDate("");
+  };
 
-  materials: [],
-  generatedTopics: [],
-  difficulty: "",
-  estimatedHours: 0,
-};
+  // ===============================
+  // Upload & Analyze Materials
+  // ===============================
+  const uploadMaterials = async () => {
+    if (!selectedCourse) {
+      alert("Please select a course to upload materials for.");
+      return;
+    }
 
-console.log(newCourse);
-setUploadedCourses([
-  ...uploadedCourses,
-  newCourse,
-]);
+    if (selectedFiles.length === 0) {
+      alert("Please select at least one file to upload.");
+      return;
+    }
 
-setCourseName("");
-setCourseCode("");
-setExamDate("");
-
-};
-
-// Upload materials
-const uploadMaterials = () => {
-  if (!selectedCourse) {
-    alert("Select a course");
-    return;
-  }
-
-  if (selectedFiles.length === 0) {
-    alert("Choose files");
-    return;
-  }
-
-  // Store file information
-  const uploadedMaterialData =
-    selectedFiles.map((file) => ({
+    const uploadedMaterialData = selectedFiles.map((file) => ({
+      id: Date.now() + Math.random(),
       name: file.name,
       size: file.size,
       type: file.type,
+      file,
     }));
 
-  // Generate topics from filenames
-  const generatedTopics =
-    selectedFiles.map((file) =>
-      file.name
-        .replace(".pdf", "")
-        .replace(".doc", "")
-        .replace(".docx", "")
-        .replace(".ppt", "")
-        .replace(".pptx", "")
+    const analyses = [];
+
+    for (const file of selectedFiles) {
+      if (file.type === "application/pdf") {
+        try {
+          const pdfData = await extractPDFText(file);
+          const analysis = analyzeMaterial(pdfData.fullText, pdfData.pages);
+
+          analyses.push({
+            fileName: file.name,
+            ...analysis,
+            progress: initializeProgress(analysis.chapters),
+          });
+        } catch (error) {
+          console.error("PDF Parsing Error:", error);
+        }
+      }
+    }
+
+    const generatedTopics = selectedFiles.map((file) =>
+      file.name.replace(/\.(pdf|doc|docx|ppt|pptx)$/i, "")
     );
 
-  // Simple difficulty estimation
-  let difficulty = "Easy";
+    const totalHours = analyses.reduce(
+      (sum, item) => sum + item.estimatedHours,
+      0
+    );
 
-  if (generatedTopics.length >= 5) {
-    difficulty = "Medium";
-  }
+    const totalPages = analyses.reduce(
+      (sum, item) => sum + item.estimatedPages,
+      0
+    );
 
-  if (generatedTopics.length >= 10) {
-    difficulty = "Hard";
-  }
+    let difficulty = "Easy";
+    if (totalPages >= 25) difficulty = "Medium";
+    if (totalPages >= 60) difficulty = "Hard";
 
-  // Estimate reading hours
-  const estimatedHours =
-    generatedTopics.length * 2;
+    setUploadedCourses((prev) =>
+      prev.map((course) =>
+        String(course.id) === String(selectedCourse)
+          ? {
+              ...course,
+              materials: [
+                ...(course.materials || []),
+                ...uploadedMaterialData,
+              ],
+              generatedTopics: [
+                ...(course.generatedTopics || []),
+                ...generatedTopics,
+              ],
+              analysis: [...(course.analysis || []), ...analyses],
+              studyPlan: generateStudyPlan(
+                analyses.flatMap((a) => a.chapters),
+                course.examDate
+              ),
+              difficulty,
+              estimatedHours: totalHours,
+            }
+          : course
+      )
+    );
 
-  setUploadedCourses((prev) =>
-    prev.map((course) =>
-      String(course.id) ===
-      String(selectedCourse)
-        ? {
-            ...course,
+    setSelectedFiles([]);
+    setSelectedCourse("");
+    alert("Materials analyzed successfully!");
+  };
 
-            materials: [
-              ...(course.materials || []),
-              ...uploadedMaterialData,
-            ],
+  // ===============================
+  // Exam Countdown Calculation
+  // ===============================
+  const calculateDaysRemaining = (date) => {
+    if (!date) return 0;
 
-            generatedTopics: [
-              ...(course.generatedTopics || []),
-              ...generatedTopics,
-            ],
+    const today = new Date();
+    const exam = new Date(date);
 
-            difficulty,
+    today.setHours(0, 0, 0, 0);
+    exam.setHours(0, 0, 0, 0);
 
-            estimatedHours,
-          }
-        : course
-    )
-  );
+    const difference = exam.getTime() - today.getTime();
+    return Math.max(0, Math.ceil(difference / (1000 * 60 * 60 * 24)));
+  };
 
-  setSelectedFiles([]);
-  setSelectedCourse("");
+  // ===============================
+  // Chapter Progress Toggle
+  // ===============================
+  const toggleChapterProgress = (courseId, reportIndex, chapterIndex) => {
+    setUploadedCourses((prev) =>
+      prev.map((course) => {
+        if (course.id !== courseId) return course;
 
-  alert(
-    "Materials analyzed successfully"
-  );
-};
+        const updatedAnalysis = course.analysis.map((report, rIndex) => {
+          if (rIndex !== reportIndex) return report;
 
-const calculateDaysRemaining = (
-  examDate
-) => {
-  if (!examDate) return 0;
+          return {
+            ...report,
+            progress: report.progress.map((chapter, cIndex) =>
+              cIndex === chapterIndex
+                ? { ...chapter, completed: !chapter.completed }
+                : chapter
+            ),
+          };
+        });
 
-  const today =
-    new Date();
+        return {
+          ...course,
+          analysis: updatedAnalysis,
+        };
+      })
+    );
+  };
 
-  const exam =
-    new Date(examDate);
+  // Filter & Search Logic
+  const filteredCourses = uploadedCourses.filter((course) => {
+    const matchesSearch =
+      course.courseCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const difference =
-    exam - today;
+    const matchesDifficulty =
+      filter === "All" ? true : course.difficulty === filter;
 
-  return Math.ceil(
-    difference /
-      (1000 * 60 * 60 * 24)
-  );
-};
+    return matchesSearch && matchesDifficulty;
+  });
 
-return ( <div className="space-y-6">
+  // Sorting Logic
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
+    switch (sortBy) {
+      case "Exam Date":
+        return new Date(a.examDate) - new Date(b.examDate);
 
-```
-  {/* Add Course */}
-
-  <div className="bg-white p-6 rounded-2xl shadow">
-    <h2 className="text-2xl font-bold mb-4">
-      Study Lab
-    </h2>
-
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-      <input
-        type="text"
-        placeholder="Course Code"
-        value={courseCode}
-        onChange={(e) =>
-          setCourseCode(
-            e.target.value
-          )
-        }
-        className="border p-3 rounded-lg"
-      />
-
-      <input
-        type="text"
-        placeholder="Course Name"
-        value={courseName}
-        onChange={(e) =>
-          setCourseName(
-            e.target.value
-          )
-        }
-        className="border p-3 rounded-lg"
-      />
-
-      <input
-        type="date"
-        value={examDate}
-        onChange={(e) =>
-          setExamDate(e.target.value)
-        }
-        className="border p-3 rounded-lg"
-      />
-
-      <button
-        onClick={addCourse}
-        className="bg-indigo-600 text-white rounded-lg px-4 py-3"
-      >
-        Add Course
-      </button>
-
-    </div>
-  </div>
-
-  {/* Upload Materials */}
-
-  <div className="bg-white p-6 rounded-2xl shadow">
-
-    <h3 className="text-xl font-bold mb-4">
-      Upload Course Materials
-    </h3>
-
-    <select
-      value={selectedCourse}
-      onChange={(e) =>
-        setSelectedCourse(
-          e.target.value
-        )
+      case "Difficulty": {
+        const order = { Easy: 1, Medium: 2, Hard: 3, "Not analyzed": 0 };
+        return order[b.difficulty] - order[a.difficulty];
       }
-      className="w-full border p-3 rounded-lg mb-4"
-    >
-      <option value="">
-        Select Course
-      </option>
 
-      {uploadedCourses.map(
-        (course) => (
-          <option
-            key={course.id}
-            value={String(
-              course.id
-            )}
-          >
-            {course.courseCode} -{" "}
-            {course.courseName}
-          </option>
-        )
-      )}
-    </select>
+      case "Study Hours":
+        return b.estimatedHours - a.estimatedHours;
 
-    <input
-      type="file"
-      multiple
-      accept=".pdf,.doc,.docx,.ppt,.pptx"
-      onChange={(e) =>
-        setSelectedFiles(
-          Array.from(
-            e.target.files || []
-          )
-        )
-      }
-      className="w-full border p-3 rounded-lg"
-    />
+      case "Newest":
+      default:
+        return b.id - a.id;
+    }
+  });
 
-    <button
-      onClick={uploadMaterials}
-      className="mt-4 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700"
-    >
-      Upload Materials
-    </button>
+  // Update & Delete Helpers
+  const updateCourse = (updatedCourse) => {
+    setUploadedCourses((prev) =>
+      prev.map((course) =>
+        course.id === updatedCourse.id
+          ? {
+              ...course,
+              courseCode: updatedCourse.courseCode,
+              courseName: updatedCourse.courseName,
+              examDate: updatedCourse.examDate,
+            }
+          : course
+      )
+    );
+    setEditingCourse(null);
+  };
 
-  </div>
+  const deleteCourse = (courseId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this course?"
+    );
+    if (!confirmDelete) return;
 
-  {/* Uploaded Courses */}
+    setUploadedCourses((prev) =>
+      prev.filter((course) => course.id !== courseId)
+    );
+  };
 
-  <div className="bg-white p-6 rounded-2xl shadow">
+  const timetable = generateTimetable(uploadedCourses);
 
-    <h3 className="text-xl font-bold mb-4">
-      Uploaded Courses
-    </h3>
-
-    {uploadedCourses.length === 0 ? (
-      <p className="text-gray-500">
-        No courses uploaded yet
-      </p>
-    ) : (
-      <div className="space-y-4">
-
-        {uploadedCourses.map(
-          (course) => {
-            const materials =
-              course.materials ||
-              [];
-
-            return (
-              <div
-                key={course.id}
-                className="border rounded-xl p-4"
-              >
-                <h4 className="font-bold">
-                  {
-                    course.courseCode
-                  }
-                </h4>
-
-                <p>
-                  {
-                    course.courseName
-                  }
-                </p>
-
-                  <p className="text-blue-600 font-medium">
-                    Difficulty:
-                    {" "}
-                    {course.difficulty || "Not analyzed"}
-                  </p>
-
-                  <p className="text-green-600 font-medium">
-                    Estimated Hours:
-                    {" "}
-                    {course.estimatedHours || 0}
-                  </p>
-
-                <p className="text-blue-600 font-semibold">
-                  Exam in:
-                  {" "}
-                  {calculateDaysRemaining(
-                    course.examDate
-                  )} days
-                </p>
-
-                <p className="text-sm text-gray-500 mt-2">
-                  Materials:
-                  {" "}
-                  {
-                    materials.length
-                  }
-                </p>
-
-                {materials.length >
-                  0 && (
-                  <ul className="mt-2 text-sm space-y-1">
-                    {materials.map(
-                      (
-                        material,
-                        index
-                      ) => (
-                        <li
-                          key={
-                            index
-                          }
-                        >
-                          📄{" "}
-                          {
-                            material.name
-                          }
-                        </li>
-                      )
-                    )}
-                  </ul>
-                )}
-              </div>
-            );
-          }
-        )}
-
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 lg:p-8">
+      {/* Header Section */}
+      <div className="border-b border-slate-200/80 pb-5">
+        <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs tracking-wider uppercase mb-1">
+          <Sparkles size={16} />
+          <span>Academic Workspace</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          Study Lab
+        </h1>
+        <p className="text-sm sm:text-base text-slate-500 mt-1 max-w-2xl">
+          Upload course materials, generate custom study schedules, track chapter progress, and stay on top of upcoming exams.
+        </p>
       </div>
-    )}
 
-  </div>
+      {/* Analytics & Overview Section */}
+      <section className="space-y-6">
+        <StudyDashboard uploadedCourses={uploadedCourses} />
+        <StudyOverview uploadedCourses={uploadedCourses} />
+      </section>
 
-</div>
+      {/* Master Timetable Section */}
+      <section className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+        <MasterTimetable timetable={timetable} />
+      </section>
 
-);
+      {/* Course & Material Management Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+          <AddCourse
+            courseCode={courseCode}
+            setCourseCode={setCourseCode}
+            courseName={courseName}
+            setCourseName={setCourseName}
+            examDate={examDate}
+            setExamDate={setExamDate}
+            addCourse={addCourse}
+          />
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+          <UploadMaterials
+            selectedCourse={selectedCourse}
+            setSelectedCourse={setSelectedCourse}
+            selectedFiles={selectedFiles}
+            setSelectedFiles={setSelectedFiles}
+            uploadMaterials={uploadMaterials}
+          />
+        </div>
+      </section>
+
+      {/* Uploaded Courses List & Filtering Section */}
+      <section className="space-y-4 pt-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookOpen size={20} className="text-indigo-600" />
+            <h2 className="text-xl font-bold text-slate-800">Your Courses</h2>
+          </div>
+        </div>
+
+        <CourseFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filter={filter}
+          setFilter={setFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+        />
+
+        <UploadedCourses
+          uploadedCourses={sortedCourses}
+          calculateDaysRemaining={calculateDaysRemaining}
+          toggleChapterProgress={toggleChapterProgress}
+          editingCourse={editingCourse}
+          setEditingCourse={setEditingCourse}
+          updateCourse={updateCourse}
+          deleteCourse={deleteCourse}
+        />
+      </section>
+    </div>
+  );
 }
 
 export default StudyLab;

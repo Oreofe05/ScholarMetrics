@@ -4,57 +4,64 @@ import {
   Route,
 } from "react-router-dom";
 
-import Sidebar from "./components/layout/Sidebar";
-import Navbar from "./components/layout/Navbar";
-import MobileBottomNav from "./components/layout/MobileBottomNav";
+import { AppProvider } from "./context/AppContext";
+
+import DashboardLayout from "./components/layout/DashboardLayout";
+
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
 import DashboardPage from "./pages/DashboardPage";
 import CGPAPage from "./pages/CGPAPage";
 import AssignmentPage from "./pages/AssignmentPage";
 import StudyLabPage from "./pages/StudyLabPage";
+import ProfileSetupPage from "./pages/ProfileSetupPage";
+
 
 function App() {
   return (
-    <BrowserRouter>
-      <div className="flex min-h-screen">
+    <AppProvider>
+      <BrowserRouter>
 
-        <Sidebar />
+        <Routes>
 
-        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Public Route */}
+          <Route
+            path="/"
+            element={<Login />}
+          />
+          <Route
+            path="/signup"
+            element={<Signup />}
+          />
+          {/* Dashboard Layout */}
+          <Route element={<DashboardLayout />}>
 
-          <Navbar />
+            <Route
+              path="/dashboard"
+              element={<DashboardPage />}
+            />
 
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+            <Route
+              path="/cgpa"
+              element={<CGPAPage />}
+            />
 
-            <Routes>
+            <Route
+              path="/assignments"
+              element={<AssignmentPage />}
+            />
 
-              <Route
-                path="/"
-                element={<DashboardPage />}
-              />
+            <Route
+              path="/study-lab"
+              element={<StudyLabPage />}
+            />
 
-              <Route
-                path="/cgpa"
-                element={<CGPAPage />}
-              />
+          </Route>
 
-              <Route
-                path="/assignments"
-                element={<AssignmentPage />}
-              />
+        </Routes>
 
-              <Route
-                path="/study-lab"
-                element={<StudyLabPage />}
-              />
-
-            </Routes>
-            <MobileBottomNav />
-          </main>
-
-        </div>
-
-      </div>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AppProvider>
   );
 }
 
