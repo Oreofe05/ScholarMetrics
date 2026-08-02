@@ -17,13 +17,9 @@ function PriorityQueue() {
 
   const navigate = useNavigate();
 
-  const openCourse = (courseCode) => {
-    navigate("/study-lab", {
-      state: {
-        selectedCourse: courseCode,
-      },
-    });
-  };
+  const openCourse = (courseId) => {
+    navigate(`/study-lab/${courseId}`);
+    };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100/80 p-5 flex flex-col justify-between">
@@ -80,7 +76,7 @@ function PriorityQueue() {
             return (
               <button
                 key={item.courseCode}
-                onClick={() => openCourse(item.courseCode)}
+                onClick={() => openCourse(item.id)}
                 className="
                   group
                   w-full

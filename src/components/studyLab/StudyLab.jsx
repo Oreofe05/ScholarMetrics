@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
 import StudyDashboard from "./StudyDashboard";
 import { extractPDFText } from "../../utils/pdfExtractor";
@@ -13,27 +13,64 @@ import CourseFilter from "./CourseFilter";
 import MasterTimetable from "./MasterTimetable";
 import { generateTimetable } from "../../utils/generateTimetable";
 import { BookOpen, Sparkles } from "lucide-react";
+import { useParams } from "react-router-dom";
+
+
 
 function StudyLab() {
+  // ===============================
+  // Route Params
+  // ===============================
+  const { courseId } = useParams();
+
+  // ===============================
+  // App Context
+  // ===============================
+  const {
+    uploadedCourses,
+    setUploadedCourses,
+  } = useApp();
+
+  // ===============================
   // Form State
+  // ===============================
   const [courseName, setCourseName] = useState("");
   const [courseCode, setCourseCode] = useState("");
   const [examDate, setExamDate] = useState("");
 
+  // ===============================
   // Upload Selection State
-  const [selectedCourse, setSelectedCourse] = useState("");
+  // ===============================
+  const [selectedCourse, setSelectedCourse] = useState(courseId || "");
   const [selectedFiles, setSelectedFiles] = useState([]);
 
+  // ===============================
   // Search, Filter & Sorting
+  // ===============================
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All");
   const [sortBy, setSortBy] = useState("Newest");
 
+  // ===============================
   // Edit Course State
+  // ===============================
   const [editingCourse, setEditingCourse] = useState(null);
 
-  // App Context
-  const { uploadedCourses, setUploadedCourses } = useApp();
+  // ===============================
+  // Active Course
+  // ===============================
+  const activeCourse = uploadedCourses.find(
+    (course) => String(course.id) === String(courseId)
+  );
+
+  // ===============================
+  // Auto-select course from URL
+  // ===============================
+  useEffect(() => {
+    if (courseId) {
+      setSelectedCourse(courseId);
+    }
+  }, [courseId]);
 
   // ===============================
   // Add New Course
@@ -94,12 +131,18 @@ function StudyLab() {
       if (file.type === "application/pdf") {
         try {
           const pdfData = await extractPDFText(file);
-          const analysis = analyzeMaterial(pdfData.fullText, pdfData.pages);
+
+          const analysis = analyzeMaterial(
+            pdfData.fullText,
+            pdfData.pages
+          );
 
           analyses.push({
             fileName: file.name,
             ...analysis,
-            progress: initializeProgress(analysis.chapters),
+            progress: initializeProgress(
+              analysis.chapters
+            ),
           });
         } catch (error) {
           console.error("PDF Parsing Error:", error);
@@ -108,7 +151,10 @@ function StudyLab() {
     }
 
     const generatedTopics = selectedFiles.map((file) =>
-      file.name.replace(/\.(pdf|doc|docx|ppt|pptx)$/i, "")
+      file.name.replace(
+        /\.(pdf|doc|docx|ppt|pptx)$/i,
+        ""
+      )
     );
 
     const totalHours = analyses.reduce(
@@ -122,6 +168,7 @@ function StudyLab() {
     );
 
     let difficulty = "Easy";
+
     if (totalPages >= 25) difficulty = "Medium";
     if (totalPages >= 60) difficulty = "Hard";
 
@@ -138,7 +185,10 @@ function StudyLab() {
                 ...(course.generatedTopics || []),
                 ...generatedTopics,
               ],
-              analysis: [...(course.analysis || []), ...analyses],
+              analysis: [
+                ...(course.analysis || []),
+                ...analyses,
+              ],
               studyPlan: generateStudyPlan(
                 analyses.flatMap((a) => a.chapters),
                 course.examDate
@@ -151,7 +201,12 @@ function StudyLab() {
     );
 
     setSelectedFiles([]);
-    setSelectedCourse("");
+
+    // Keep the current course selected when navigating from Priority Queue
+    if (!courseId) {
+      setSelectedCourse("");
+    }
+
     alert("Materials analyzed successfully!");
   };
 
@@ -262,6 +317,7 @@ function StudyLab() {
 
   const timetable = generateTimetable(uploadedCourses);
 
+  
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 lg:p-8">
       {/* Header Section */}

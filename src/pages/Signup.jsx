@@ -7,7 +7,7 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogleSignup = () => {
-    navigate("/DashboardPage");
+    navigate("/profile-setup");;
   };
 
   return (
@@ -56,7 +56,7 @@ function Signup() {
 
         {/* Submit Button */}
         <button
-          type="submit"
+          type="submit" 
           className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-sm mt-2"
         >
           Create Account

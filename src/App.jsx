@@ -15,7 +15,7 @@ import CGPAPage from "./pages/CGPAPage";
 import AssignmentPage from "./pages/AssignmentPage";
 import StudyLabPage from "./pages/StudyLabPage";
 import ProfileSetupPage from "./pages/ProfileSetupPage";
-
+import StudyLab from "./components/studyLab/StudyLab";
 
 function App() {
   return (
@@ -30,8 +30,12 @@ function App() {
             element={<Login />}
           />
           <Route
-            path="/signup"
-            element={<Signup />}
+            path="/study-lab/:courseId"
+            element={<StudyLab />}
+          />
+          <Route
+            path="/profile-setup"
+            element={<ProfileSetupPage />}
           />
           {/* Dashboard Layout */}
           <Route element={<DashboardLayout />}>

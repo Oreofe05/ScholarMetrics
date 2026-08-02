@@ -8,6 +8,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import logo from "../../assets/logo.png";
 
 function Sidebar() {
   const location = useLocation();
@@ -17,7 +18,7 @@ function Sidebar() {
     { name: "CGPA Tracker", icon: GraduationCap, path: "/cgpa" },
     { name: "Assignments", icon: ClipboardList, path: "/assignments" },
     { name: "Study Lab", icon: BookOpen, path: "/study-lab" },
-    { name: "Settings", icon: Settings, path: "/settings" },
+
   ];
 
   return (
@@ -25,19 +26,11 @@ function Sidebar() {
       <div>
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-lg">
-            S
-          </div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">
-            Student Hub
-          </h1>
+          <logo/>
+          
         </div>
 
-        {/* Call to Action Button */}
-        <button className="w-full bg-[#6C2BD9] hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm shadow-purple-200 mb-8">
-          <span>Add Course</span>
-          <Plus size={18} />
-        </button>
+        
 
         {/* Navigation Links */}
         <nav className="space-y-1">
@@ -63,14 +56,7 @@ function Sidebar() {
         </nav>
       </div>
 
-      {/* Bottom Promo Widget */}
-      <div className="bg-purple-50/70 rounded-2xl p-4 text-center border border-purple-100">
-        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 text-purple-600">
-          <Smartphone size={20} />
-        </div>
-        <h4 className="font-semibold text-slate-800 text-sm">Get mobile app</h4>
-        <p className="text-xs text-slate-400 mt-1">Track on the go</p>
-      </div>
+      
     </aside>
   );
 }

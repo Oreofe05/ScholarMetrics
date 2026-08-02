@@ -14,32 +14,35 @@ export function AppProvider({ children }) {
   const [cgpa, setCgpa] =
     useLocalStorage("cgpa", 0);
 
-  const value = {
-    uploadedCourses,
-    setUploadedCourses,
-
-    assignments,
-    setAssignments,
-
-    cgpa,
-    setCgpa,
-  };
+  // Student Profile
+  const [studentProfile, setStudentProfile] =
+  useLocalStorage("studentProfile", {
+    photo: "",
+    fullName: "",
+    university: "",
+    department: "",
+    level: "",
+    cgpaScale: 5,
+  });
 
   return (
     <AppContext.Provider
-        value={{
-            uploadedCourses,
-            setUploadedCourses,
+      value={{
+        uploadedCourses,
+        setUploadedCourses,
 
-            cgpa,
-            setCgpa,
+        assignments,
+        setAssignments,
 
-            assignments,
-            setAssignments,
-        }}
-        >
-        {children}
-        </AppContext.Provider>
+        cgpa,
+        setCgpa,
+
+        studentProfile,
+        setStudentProfile,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
   );
 }
 
