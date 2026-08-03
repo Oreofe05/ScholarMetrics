@@ -214,7 +214,7 @@ function CourseCard({
                 key={material.id}
                 className="bg-gray-100 rounded-lg px-4 py-2"
               >
-                📄 {material.name}
+                📄 {material.fileName}
               </li>
 
             ))}
@@ -232,164 +232,61 @@ function CourseCard({
       </div>
 
         {/* AI Study Plan */}
-            <StudyPlan studyPlan={course.studyPlan} />
+            {materials.map((material) => (
+              material.studyPlan && (
+                  <StudyPlan
+                      key={material.id}
+                      studyPlan={material.studyPlan.plan}
+                  />
+              )
+          ))}
 
       {/* Analysis */}
 
-      {course.analysis?.length > 0 && (
+      {materials.map((material) => (
+  <div
+    key={material.id}
+    className="mt-8 border-t pt-6 space-y-6"
+  >
+    {/* Summary */}
+    {material.summary && (
+      <div>
+        <h3 className="text-xl font-bold mb-2">
+          AI Summary
+        </h3>
 
-        <div className="mt-8 border-t pt-6">
-
-          <h3 className="text-xl font-bold mb-4">
-            Material Analysis
-          </h3>
-
-          {course.analysis.map((report, index) => (
-            <div
-                key={index}
-                className="bg-slate-50 rounded-xl p-5 mb-5"
-            >
-                <h4 className="font-bold text-indigo-600">
-                {report.fileName}
-                </h4>
-
-                <div className="grid md:grid-cols-4 grid-cols-2 gap-4 mt-5">
-                <div>
-                    <p className="text-gray-500 text-sm">
-                    Words
-                    </p>
-
-                    <p className="font-bold">
-                    {report.wordCount}
-                    </p>
-                </div>
-
-                <div>
-                    <p className="text-gray-500 text-sm">
-                    Pages
-                    </p>
-
-                    <p className="font-bold">
-                    {report.estimatedPages}
-                    </p>
-                </div>
-
-                <div>
-                    <p className="text-gray-500 text-sm">
-                    Reading Time
-                    </p>
-
-                    <p className="font-bold">
-                    {report.readingMinutes} mins
-                    </p>
-                </div>
-
-                <div>
-                    <p className="text-gray-500 text-sm">
-                    Complexity
-                    </p>
-
-                    <p className="font-bold">
-                    {report.complexityScore}/100
-                    </p>
-                </div>
-                </div>
-
-                {/* Chapters */}
-
-                <div className="mt-6">
-                <h4 className="font-semibold mb-2">
-                    Chapters
-                </h4>
-
-                {report.chapters?.length > 0 ? (
-                    <ul className="list-disc ml-5">
-                    {report.chapters.map((chapter) => (
-                        <li key={chapter.chapterNumber}>
-                        {chapter.title}
-                        </li>
-                    ))}
-                    </ul>
-                ) : (
-                    <p className="text-gray-500">
-                    No chapters detected.
-                    </p>
-                )}
-                </div>
-
-                {/* Topics */}
-
-                <div className="mt-6">
-                <h4 className="font-semibold mb-2">
-                    Topics
-                </h4>
-
-                {report.topics?.length > 0 ? (
-                    <ul className="list-disc ml-5">
-                    {report.topics.map((topic) => (
-                        <li key={topic}>
-                        {topic}
-                        </li>
-                    ))}
-                    </ul>
-                ) : (
-                    <p className="text-gray-500">
-                    No topics detected.
-                    </p>
-                )}
-                </div>
-
-                {/* Progress Tracker */}
-                <ProgressTracker
-                    report={report}
-                    onToggle={(chapterIndex) =>
-                        toggleChapterProgress(
-                        course.id,
-                        index,
-                        chapterIndex
-                        )
-                    }
-                    />
-
-                {/* Keywords */}
-
-                <div className="mt-6">
-                <h4 className="font-semibold mb-2">
-                    Keywords
-                </h4>
-
-                <div className="flex flex-wrap gap-2">
-                    {report.keywords?.map((keyword) => (
-                    <span
-                        key={keyword}
-                        className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm"
-                    >
-                        {keyword}
-                    </span>
-                    ))}
-                </div>
-                </div>
-
-                {/* AI Tutor */}
-
-            <AITutor
-            course={course}
-            />
-
-            {/* Quiz Generator */}
-
-            <QuizGenerator
-            course={course}
-            />
-
-            <Flashcards report={report} />
-
-            </div>
-            ))}
-
+        <div className="bg-slate-50 rounded-xl p-5">
+          <p>{material.summary.summary}</p>
         </div>
+      </div>
+    )}
 
-      )}
+    {/* Study Plan */}
+    {material.studyPlan && (
+      <StudyPlan studyPlan={material.studyPlan.plan} />
+    )}
+
+    {/* Progress */}
+    {material.progress && (
+      <ProgressTracker
+        progress={material.progress}
+      />
+    )}
+
+    {/* Flashcards */}
+    {material.flashcards?.length > 0 && (
+      <Flashcards flashcards={material.flashcards} />
+    )}
+
+    {/* Quiz */}
+    {material.quizQuestions?.length > 0 && (
+      <QuizGenerator quizQuestions={material.quizQuestions} />
+    )}
+
+    {/* AI Tutor */}
+    <AITutor material={material} />
+  </div>
+))}
 
     </div>
   );

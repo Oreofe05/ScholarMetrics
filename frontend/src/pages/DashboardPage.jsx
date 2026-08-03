@@ -10,6 +10,7 @@ import { calculateAcademicHealth } from "../utils/calculateAcademicHealth";
 import { getTodaysFocus } from "../utils/getTodaysFocus";
 import { calculateStudyStreak } from "../utils/calculateStudyStreak";
 
+
 import { 
   Flame, 
   Calendar, 
@@ -28,6 +29,8 @@ function Dashboard() {
   } = useApp();
 
   const health = calculateAcademicHealth({ courses: uploadedCourses, assignments, cgpa,});
+
+  
 
   const streak = calculateStudyStreak(uploadedCourses);
   const todaysFocus = getTodaysFocus(uploadedCourses);
@@ -63,6 +66,9 @@ function Dashboard() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mt-2">
             Welcome back, {studentProfile.fullName || "Student"} 👋
           </h1>
+          <p className="text-sm text-slate-500">
+            {studentProfile.university}
+          </p>
         </div>
         
         {/* Today's Focus Pill */}

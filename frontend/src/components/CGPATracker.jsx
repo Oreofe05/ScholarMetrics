@@ -3,22 +3,26 @@ import AddCourseForm from "./AddCourseForm";
 import CourseTable from "./CourseTable";
 import SemesterTabs from "./SemesterTabs";
 import GPAChart from "./GPAChart";
-import GPAConfig from "./GPAConfig";
 import StatsCards from "./StatsCards";
 import SearchBar from "./SearchBar";
-import SemesterStats from "./SemesterStats";
-import useLocalStorage from "../hooks/useLocalStorage";
 
 import {
   calculateSemesterGPA,
   calculateCGPA,
 } from "../utils/gpaCalculations";
 
+import {
+  getCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse as removeCourse,
+} from "../services/cgpaService";
+
 import { exportAllSemestersCSV } from "../utils/csvExport";
 import { useApp } from "../context/AppContext";
 import { getClassification } from "../utils/classification";
 
-import { Download, Trash2, GraduationCap } from "lucide-react";
+import { Download, Trash2, GraduationCap, Plus, SlidersHorizontal } from "lucide-react";
 
 function CGPATracker() {
   const [scale, setScale] = useState(5);
@@ -28,29 +32,34 @@ function CGPATracker() {
   const [grade, setGrade] = useState("A");
   const [search, setSearch] = useState("");
 
-  const [semesters, setSemesters] = useLocalStorage("semesters", [
-    {
-      id: Date.now(),
-      courses: [],
-    },
-  ]);
-
+  const [semesters, setSemesters] = useState([]);
   const [editingCourse, setEditingCourse] = useState(null);
 
-  const [activeSemester, setActiveSemester] = useLocalStorage(
-    "activeSemester",
-    null
-  );
+  const [activeSemester, setActiveSemester] = useState(null);
 
   const [editingSemester, setEditingSemester] = useState(null);
 
   const { setCgpa } = useApp();
 
   useEffect(() => {
-    if (!activeSemester && semesters.length > 0) {
-      setActiveSemester(semesters[0].id);
+    loadCourses();
+  }, []);
+
+  const loadCourses = async () => {
+    try {
+      const data = await getCourses();
+
+      setSemesters(data);
+
+      if (data.length > 0) {
+        setActiveSemester(data[0].id);
+      }
+
+    } catch (error) {
+      console.error(error);
     }
-  }, [activeSemester, semesters, setActiveSemester]);
+  };
+
 
   const gradePoints =
     scale === 5
@@ -82,84 +91,15 @@ function CGPATracker() {
 
   const totalUnits = courses.reduce((sum, course) => sum + course.unit, 0);
 
-  const highestScore =
-    courses.length > 0
-      ? Math.max(...courses.map((course) => gradePoints[course.grade]))
-      : 0;
+  const deleteCourse = async (id) => {
+    try {
+      await removeCourse(id);
 
-  const lowestScore =
-    courses.length > 0
-      ? Math.min(...courses.map((course) => gradePoints[course.grade]))
-      : 0;
+      await loadCourses();
 
-  const numberOfA = courses.filter((course) => course.grade === "A").length;
-
-  const totalQualityPoints = courses.reduce(
-    (sum, course) => sum + gradePoints[course.grade] * course.unit,
-    0
-  );
-
-  const addCourse = () => {
-    if (!courseCode || !courseUnit) {
-      alert("Fill all fields");
-      return;
+    } catch (error) {
+      console.error(error);
     }
-
-    if (editingCourse) {
-      setSemesters((prev) =>
-        prev.map((semester) =>
-          semester.id === activeSemester
-            ? {
-                ...semester,
-                courses: semester.courses.map((course) =>
-                  course.courseCode === editingCourse.courseCode
-                    ? {
-                        courseCode,
-                        unit: Number(courseUnit),
-                        grade,
-                      }
-                    : course
-                ),
-              }
-            : semester
-        )
-      );
-
-      setEditingCourse(null);
-    } else {
-      setSemesters((prev) =>
-        prev.map((semester) => {
-          if (semester.id !== activeSemester) {
-            return semester;
-          }
-
-          const exists = semester.courses.some(
-            (course) => course.courseCode === courseCode
-          );
-
-          if (exists) {
-            alert("Course already exists");
-            return semester;
-          }
-
-          return {
-            ...semester,
-            courses: [
-              ...semester.courses,
-              {
-                courseCode,
-                unit: Number(courseUnit),
-                grade,
-              },
-            ],
-          };
-        })
-      );
-    }
-
-    setCourseCode("");
-    setCourseUnit("");
-    setGrade("A");
   };
 
   const handleEditCourse = (course) => {
@@ -285,6 +225,71 @@ function CGPATracker() {
           </div>
         </div>
 
+        {/* Top Summary Cards */}
+        <StatsCards
+          gpa={semesterGPA}
+          cgpa={calculatedCGPA}
+          totalUnits={totalUnits}
+          classification={classification}
+        />
+
+        {/* GPA Trend & Semester Controls */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                GPA Trend & Progress
+              </h2>
+              <p className="text-xs text-slate-500">
+                Historical performance across all recorded semesters
+              </p>
+            </div>
+
+            {/* Actions: Add Semester + Professional Scale Toggle */}
+            <div className="flex items-center gap-3">
+              {/* Professional Segmented Scale Toggle */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+                <span className="text-[11px] font-semibold text-slate-500 px-2 flex items-center gap-1 hidden sm:flex">
+                  <SlidersHorizontal size={12} />
+                  Scale:
+                </span>
+                <button
+                  onClick={() => setScale(4)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    scale === 4
+                      ? "bg-white text-indigo-600 shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  4.0
+                </button>
+                <button
+                  onClick={() => setScale(5)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    scale === 5
+                      ? "bg-white text-indigo-600 shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  5.0
+                </button>
+              </div>
+
+              {/* Add Semester Action button alongside Trend */}
+              <button
+                onClick={addSemester}
+                className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <Plus size={15} />
+                <span>Add Semester</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Chart */}
+          <GPAChart semesterData={semesterData} scale={scale} />
+        </div>
+
         {/* Semester Navigation */}
         <SemesterTabs
           semesters={semesters}
@@ -297,39 +302,14 @@ function CGPATracker() {
           addSemester={addSemester}
         />
 
-        {/* Top Summary Cards */}
-        <StatsCards
-          gpa={semesterGPA}
-          cgpa={calculatedCGPA}
-          totalUnits={totalUnits}
-          classification={classification}
-        />
-
-        {/* GPA Trend Section */}
-        <div className="space-y-6">
-          {/* Full Width Trend Chart */}
-          <GPAChart semesterData={semesterData} scale={scale} />
-
-          {/* Configuration and Scores side-by-side beneath the Chart */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <GPAConfig scale={scale} setScale={setScale} />
-            <SemesterStats
-              highestScore={highestScore}
-              lowestScore={lowestScore}
-              totalQualityPoints={totalQualityPoints}
-              numberOfA={numberOfA}
-            />
-          </div>
-        </div>
-
         {/* Course Management Section */}
-        <div className="bg-white rounded-2xl border border-slate-100/80 shadow-sm p-5 space-y-5">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-bold text-slate-800 tracking-tight">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 Course Management
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Add, edit, and organize your courses for this semester
               </p>
             </div>

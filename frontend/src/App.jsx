@@ -4,9 +4,8 @@ import {
   Route,
 } from "react-router-dom";
 
-import { AppProvider } from "./context/AppContext";
-
 import DashboardLayout from "./components/layout/DashboardLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -19,53 +18,67 @@ import StudyLab from "./components/studyLab/StudyLab";
 
 function App() {
   return (
-    <AppProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <Routes>
 
-        <Routes>
+        {/* =========================
+            PUBLIC ROUTES
+        ========================== */}
 
-          {/* Public Route */}
+        <Route
+          path="/"
+          element={<Login />}
+        />
+
+        <Route
+          path="/signup"
+          element={<Signup />}
+        />
+
+        <Route
+          path="/profile-setup"
+          element={<ProfileSetupPage />}
+        />
+
+        <Route
+          path="/study-lab/:courseId"
+          element={<StudyLab />}
+        />
+
+        {/* =========================
+            PROTECTED ROUTES
+        ========================== */}
+
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route
-            path="/"
-            element={<Login />}
+            path="/dashboard"
+            element={<DashboardPage />}
           />
+
           <Route
-            path="/study-lab/:courseId"
-            element={<StudyLab />}
+            path="/cgpa"
+            element={<CGPAPage />}
           />
+
           <Route
-            path="/profile-setup"
-            element={<ProfileSetupPage />}
+            path="/assignments"
+            element={<AssignmentPage />}
           />
-          {/* Dashboard Layout */}
-          <Route element={<DashboardLayout />}>
 
-            <Route
-              path="/dashboard"
-              element={<DashboardPage />}
-            />
+          <Route
+            path="/study-lab"
+            element={<StudyLabPage />}
+          />
+        </Route>
 
-            <Route
-              path="/cgpa"
-              element={<CGPAPage />}
-            />
-
-            <Route
-              path="/assignments"
-              element={<AssignmentPage />}
-            />
-
-            <Route
-              path="/study-lab"
-              element={<StudyLabPage />}
-            />
-
-          </Route>
-
-        </Routes>
-
-      </BrowserRouter>
-    </AppProvider>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

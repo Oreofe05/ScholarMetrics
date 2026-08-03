@@ -12,21 +12,22 @@ import {
 } from "lucide-react";
 import Logo from "../components/auth/Logo"; 
 import { useApp } from "../context/AppContext";
+import { updateProfile } from "../services/profileService";
+import { useAuth } from "../context/AuthContext";
+
 
 function ProfileSetupPage() {
   const navigate = useNavigate();
-  const { studentProfile, setStudentProfile } = useApp();
-
-  const [form, setForm] = useState({
-    fullName: "",
+  
+const { user } = useAuth();
+const [form, setForm] = useState({
+    fullName: user?.fullName || "",
     university: "",
     department: "",
     level: "",
     cgpaScale: 5,
     photo: null,
-    ...studentProfile,
   });
-
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -42,21 +43,17 @@ function ProfileSetupPage() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({
-        ...prev,
-        photo: reader.result,
-      }));
-    };
-    reader.readAsDataURL(file);
+    setForm((prev) => ({
+      ...prev,
+      photo: file,
+      preview: URL.createObjectURL(file),
+    }));
   };
 
-  const saveProfile = (e) => {
+  const saveProfile = async (e) => {
     e.preventDefault();
 
     if (
-      !form.fullName.trim() ||
       !form.university.trim() ||
       !form.department.trim() ||
       !form.level
@@ -65,8 +62,29 @@ function ProfileSetupPage() {
       return;
     }
 
-    setStudentProfile(form);
-    navigate("/");
+    try {
+      const formData = new FormData();
+
+      formData.append("university", form.university);
+      formData.append("department", form.department);
+      formData.append("level", form.level);
+      formData.append("cgpaScale", form.cgpaScale);
+
+      if (form.photo) {
+        formData.append("photo", form.photo);
+      }
+
+      await updateProfile(formData);
+
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err.response?.data?.message ||
+        "Failed to save profile."
+      );
+    }
   };
 
   return (
@@ -101,7 +119,7 @@ function ProfileSetupPage() {
               <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300 group-hover:border-indigo-500 flex items-center justify-center transition-all shadow-2xs">
                 {form.photo ? (
                   <img
-                    src={form.photo}
+                    src={form.preview}
                     alt="Profile Preview"
                     className="w-full h-full object-cover"
                   />

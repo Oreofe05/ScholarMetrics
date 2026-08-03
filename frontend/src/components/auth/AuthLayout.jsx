@@ -1,7 +1,11 @@
 import Logo from "./Logo";
 import illustration from "../../assets/illustration.jpg";
 
+
+
 function AuthLayout({ title, children, isSignUp = false }) {
+
+  
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-slate-800 antialiased">
 

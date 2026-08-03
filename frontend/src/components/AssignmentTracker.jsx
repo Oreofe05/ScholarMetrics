@@ -1,16 +1,20 @@
-import { useState } from "react";
-import useLocalStorage from "../hooks/useLocalStorage";
-import { 
-  CheckCircle2, 
-  Circle, 
-  Trash2, 
-  Plus, 
-  Search, 
-  Calendar, 
-  BookOpen, 
-  AlertCircle,
-  Clock,
-  Check
+import { useState, useEffect } from "react";
+import {
+  getAssignments,
+  createAssignment,
+  updateAssignment,
+  deleteAssignment as removeAssignment,
+} from "../services/assignmentService";
+
+import {
+  CheckCircle2,
+  Circle,
+  Trash2,
+  Plus,
+  Search,
+  Calendar,
+  BookOpen,
+  Check,
 } from "lucide-react";
 
 function AssignmentTracker() {
@@ -25,115 +29,233 @@ function AssignmentTracker() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
 
-  // Local storage persistence
-  const [assignments, setAssignments] = useLocalStorage("assignments", []);
+  // Backend data
+  const [assignments, setAssignments] = useState([]);
+
+  // Load assignments on page load
+  useEffect(() => {
+    loadAssignments();
+  }, []);
+
+  const loadAssignments = async () => {
+    try {
+      const data = await getAssignments();
+      setAssignments(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Dashboard statistics
   const totalAssignments = assignments.length;
-  const completedAssignments = assignments.filter((a) => a.completed).length;
-  const pendingAssignments = assignments.filter((a) => !a.completed).length;
+
+  const completedAssignments = assignments.filter(
+    (assignment) => assignment.completed
+  ).length;
+
+  const pendingAssignments = assignments.filter(
+    (assignment) => !assignment.completed
+  ).length;
+
   const overdueAssignments = assignments.filter(
-    (a) => !a.completed && new Date(a.deadline) < new Date()
+    (assignment) =>
+      !assignment.completed &&
+      new Date(assignment.deadline) < new Date()
   ).length;
 
   const completionPercentage =
     totalAssignments === 0
       ? 0
-      : Math.round((completedAssignments / totalAssignments) * 100);
+      : Math.round(
+          (completedAssignments / totalAssignments) * 100
+        );
 
-  const addAssignment = (e) => {
-    e?.preventDefault();
+  // Create Assignment
+  const addAssignment = async (e) => {
+    e.preventDefault();
+
     if (!title || !course || !deadline) {
       alert("Please fill in all fields.");
       return;
     }
 
-    const newAssignment = {
-      id: Date.now(),
-      title,
-      course,
-      deadline,
-      priority,
-      createdAt: new Date().toISOString(),
-      completed: false,
-    };
+    try {
+      const newAssignment = await createAssignment({
+        title,
+        course,
+        deadline,
+        priority,
+      });
 
-    setAssignments([...assignments, newAssignment]);
+      setAssignments((prev) => [...prev, newAssignment]);
 
-    // Reset form
-    setTitle("");
-    setCourse("");
-    setDeadline("");
-    setPriority("Medium");
+      setTitle("");
+      setCourse("");
+      setDeadline("");
+      setPriority("Medium");
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to create assignment.");
+    }
   };
 
-  const toggleComplete = (id) => {
-    setAssignments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, completed: !a.completed } : a))
-    );
+  // Toggle Complete
+  const toggleComplete = async (id) => {
+    try {
+      const assignment = assignments.find(
+        (a) => a.id === id
+      );
+
+      const updated = await updateAssignment(id, {
+        completed: !assignment.completed,
+      });
+
+      setAssignments((prev) =>
+        prev.map((assignment) =>
+          assignment.id === id ? updated : assignment
+        )
+      );
+
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteAssignment = (id) => {
+  // Delete Assignment
+  const deleteAssignment = async (id) => {
     if (!window.confirm("Delete this assignment?")) return;
-    setAssignments((prev) => prev.filter((a) => a.id !== id));
+
+    try {
+      await removeAssignment(id);
+
+      setAssignments((prev) =>
+        prev.filter((assignment) => assignment.id !== id)
+      );
+
+    } catch (error) {
+      console.error(error);
+    }
   };
 
+  // Days Remaining
   const getDaysRemaining = (deadline) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const dueDate = new Date(deadline);
+
     const difference = dueDate - today;
-    return Math.ceil(difference / (1000 * 60 * 60 * 24));
+
+    return Math.ceil(
+      difference / (1000 * 60 * 60 * 24)
+    );
   };
 
+  // Status Badge
   const getDeadlineStatus = (deadline, completed) => {
     if (completed) {
-      return { text: "Completed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+      return {
+        text: "Completed",
+        color:
+          "bg-emerald-50 text-emerald-700 border-emerald-200",
+      };
     }
 
     const days = getDaysRemaining(deadline);
 
     if (days < 0) {
-      return { text: "Overdue", color: "bg-rose-50 text-rose-700 border-rose-200" };
-    }
-    if (days === 0) {
-      return { text: "Due Today", color: "bg-amber-50 text-amber-700 border-amber-200" };
-    }
-    if (days <= 2) {
-      return { text: `${days}d left`, color: "bg-amber-50 text-amber-700 border-amber-200" };
-    }
-    if (days <= 7) {
-      return { text: `${days}d left`, color: "bg-sky-50 text-sky-700 border-sky-200" };
+      return {
+        text: "Overdue",
+        color:
+          "bg-rose-50 text-rose-700 border-rose-200",
+      };
     }
 
-    return { text: `${days}d left`, color: "bg-slate-50 text-slate-600 border-slate-200" };
+    if (days === 0) {
+      return {
+        text: "Due Today",
+        color:
+          "bg-amber-50 text-amber-700 border-amber-200",
+      };
+    }
+
+    if (days <= 2) {
+      return {
+        text: `${days}d left`,
+        color:
+          "bg-amber-50 text-amber-700 border-amber-200",
+      };
+    }
+
+    if (days <= 7) {
+      return {
+        text: `${days}d left`,
+        color:
+          "bg-sky-50 text-sky-700 border-sky-200",
+      };
+    }
+
+    return {
+      text: `${days}d left`,
+      color:
+        "bg-slate-50 text-slate-600 border-slate-200",
+    };
   };
 
-  const sortedAssignments = [...assignments].sort((a, b) => {
-    const priorityOrder = { High: 3, Medium: 2, Low: 1 };
-    const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-    if (priorityDiff !== 0) return priorityDiff;
-    return new Date(a.deadline) - new Date(b.deadline);
-  });
+  // Sort Assignments
+  const sortedAssignments = [...assignments].sort(
+    (a, b) => {
+      const priorityOrder = {
+        High: 3,
+        Medium: 2,
+        Low: 1,
+      };
 
-  const filteredAssignments = sortedAssignments.filter((assignment) => {
-    const matchesSearch =
-      assignment.title.toLowerCase().includes(search.toLowerCase()) ||
-      assignment.course.toLowerCase().includes(search.toLowerCase());
+      const priorityDiff =
+        priorityOrder[b.priority] -
+        priorityOrder[a.priority];
 
-    const matchesStatus =
-      statusFilter === "All"
-        ? true
-        : statusFilter === "Completed"
-        ? assignment.completed
-        : !assignment.completed;
+      if (priorityDiff !== 0)
+        return priorityDiff;
 
-    const matchesPriority =
-      priorityFilter === "All" ? true : assignment.priority === priorityFilter;
+      return (
+        new Date(a.deadline) -
+        new Date(b.deadline)
+      );
+    }
+  );
 
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
+  // Filter Assignments
+  const filteredAssignments =
+    sortedAssignments.filter((assignment) => {
+      const matchesSearch =
+        assignment.title
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        assignment.course
+          .toLowerCase()
+          .includes(search.toLowerCase());
 
+      const matchesStatus =
+        statusFilter === "All"
+          ? true
+          : statusFilter === "Completed"
+          ? assignment.completed
+          : !assignment.completed;
+
+      const matchesPriority =
+        priorityFilter === "All"
+          ? true
+          : assignment.priority ===
+            priorityFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesPriority
+      );
+    });
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-6">
       

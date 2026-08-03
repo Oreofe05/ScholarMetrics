@@ -1,17 +1,24 @@
 import { BookOpen, FileText, Clock, Calendar } from "lucide-react";
 
 function StudyDashboard({ uploadedCourses = [] }) {
+  
   const totalCourses = uploadedCourses.length;
-
+  
   const totalMaterials = uploadedCourses.reduce(
     (total, course) => total + (course.materials?.length || 0),
     0
   );
 
-  const totalHours = uploadedCourses.reduce(
-    (total, course) => total + (course.estimatedHours || 0),
-    0
-  );
+  const totalHours = uploadedCourses.reduce((total, course) => {
+
+    const pages = (course.materials || []).reduce(
+      (sum, material) => sum + (material.pages || 0),
+      0
+    );
+
+    return total + pages / 8;
+
+  }, 0);
 
   const nearestExam = uploadedCourses
     .filter((course) => course.examDate)
@@ -31,7 +38,7 @@ function StudyDashboard({ uploadedCourses = [] }) {
   const daysLeft = calculateDaysLeft();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Total Courses */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
         <div className="space-y-1">
@@ -63,21 +70,23 @@ function StudyDashboard({ uploadedCourses = [] }) {
       </div>
 
       {/* Total Reading Hours */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Estimated Reading
-          </p>
-          <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            {totalHours ? totalHours.toFixed(1) : "0"}{" "}
-            <span className="text-sm font-semibold text-slate-400">hrs</span>
-          </p>
-        </div>
-        <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-          <Clock size={22} />
-        </div>
-      </div>
+      {/*
+<div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
+  <div className="space-y-1">
+    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+      Estimated Reading
+    </p>
+    <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+      {totalHours ? totalHours.toFixed(1) : "0"}{" "}
+      <span className="text-sm font-semibold text-slate-400">hrs</span>
+    </p>
+  </div>
 
+  <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+    <Clock size={22} />
+  </div>
+</div>
+*/}
       {/* Nearest Exam */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
         <div className="space-y-1">

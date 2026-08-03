@@ -4,7 +4,10 @@ import Sidebar from "./Sidebar";
 import Navbar from "./Navbar"
 import MobileBottomNav from "./MobileBottomNav";
 
+
 function DashboardLayout() {
+
+  
   return (
     <div className="flex min-h-screen">
 

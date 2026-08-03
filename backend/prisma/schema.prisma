@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  fullName    String
+  email       String   @unique
+  password    String
+
+  photo       String?
+  university  String?
+  department  String?
+  level       String?
+  cgpaScale   Int?     @default(5)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses      Course[]
+  assignments  Assignment[]
+  results      Result[]
+}
+
+
+model Course {
+  id          String   @id @default(cuid())
+
+  courseCode  String
+  courseName  String
+  units       Int
+
+  semester    String
+  level       String
+
+  lecturer    String?
+
+  examDate    DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  materials   Material[]
+}
+
+model Material {
+  id          String   @id @default(cuid())
+
+  fileName    String
+  fileType    String
+  fileSize    Int
+  filePath    String
+
+  uploadedAt  DateTime @default(now())
+
+  courseId    String
+  course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  chunks        MaterialChunk[]
+  summary       MaterialSummary?
+  flashcards    Flashcard[]
+  quizQuestions QuizQuestion[]
+  chatHistory   ChatHistory[]
+  studyPlan     StudyPlan?
+  progress      StudyProgress?
+}
+
+model MaterialChunk {
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  chunkIndex  Int
+
+  materialId  String
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  embedding   MaterialEmbedding?
+
+  createdAt   DateTime @default(now())
+}
+
+model MaterialSummary {
+  id         String   @id @default(cuid())
+
+  summary    String   @db.Text
+
+  materialId String   @unique
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+
+model Flashcard {
+  id         String   @id @default(cuid())
+
+  question   String
+  answer     String
+
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+
+model QuizQuestion {
+  id            String   @id @default(cuid())
+
+  question      String
+
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+
+  correctAnswer String
+
+  materialId    String
+  material      Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+}
+
+model ChatHistory {
+  id         String   @id @default(cuid())
+
+  question   String
+  answer     String   @db.Text
+
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+
+model MaterialEmbedding {
+  id              String @id @default(cuid())
+  embedding       Json
+
+  materialChunkId String @unique
+
+  chunk           MaterialChunk @relation(fields: [materialChunkId], references: [id], onDelete: Cascade)
+}
+
+model StudyPlan {
+  id         String   @id @default(cuid())
+
+  plan       String   @db.Text
+
+  materialId String   @unique
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+
+model StudyProgress {
+  id                String   @id @default(cuid())
+
+  materialId        String   @unique
+  material          Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  flashcardsViewed  Int      @default(0)
+  quizzesTaken      Int      @default(0)
+  averageQuizScore  Float    @default(0)
+
+  completed         Boolean  @default(false)
+
+  lastStudied       DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  course      String
+  deadline    DateTime
+  priority    String   @default("Medium")
+  completed   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Result {
+  id          String   @id @default(cuid())
+
+  courseCode  String
+  courseTitle String
+
+  unit        Int
+  score       Int
+
+  grade       String
+  gradePoint  Int
+
+  semester    String
+  session     String
+
+  createdAt   DateTime @default(now())
+
+  userId       String
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
