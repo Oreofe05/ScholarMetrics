@@ -109,20 +109,7 @@ function CGPATracker() {
     setEditingCourse(course);
   };
 
-  const deleteCourse = (courseCode) => {
-    setSemesters((prev) =>
-      prev.map((semester) =>
-        semester.id === activeSemester
-          ? {
-              ...semester,
-              courses: semester.courses.filter(
-                (course) => course.courseCode !== courseCode
-              ),
-            }
-          : semester
-      )
-    );
-  };
+  
 
   const addSemester = () => {
     const newSemester = {
