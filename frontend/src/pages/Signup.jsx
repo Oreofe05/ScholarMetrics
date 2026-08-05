@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../components/auth/AuthLayout";
 import { useAuth } from "../context/AuthContext";
-
+import goodlebutton from "../components/auth/GoogleButton";
+import GoogleButton from "../components/auth/GoogleButton";
 function Signup() {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -171,7 +172,7 @@ function Signup() {
             onClick={() => alert("Google Sign-In coming soon")}
             className="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200"
           >
-            G
+            <GoogleButton />
           </button>
         </div>
       {/* Footer */}
