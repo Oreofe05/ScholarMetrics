@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Scholar Metrics Backend",
-  "main": "server.js",
-  "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node server.js"
-  },
+ "main": "src/server.js",
+"scripts": {
+  "dev": "nodemon src/server.js",
+  "start": "node src/server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
