@@ -60,7 +60,7 @@ export const registerUser = async (req, res) => {
     stack: error.stack,
   });
 }
-};
+;
 
 // Login User
 export const loginUser = async (req, res) => {
