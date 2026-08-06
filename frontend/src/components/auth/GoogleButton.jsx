@@ -5,9 +5,8 @@ function GoogleButton({ text, onClick }) {
       className="
         w-full
         h-16
-        border
-        border-slate-300
-        rounded-2xl
+        
+        rounded-full
         flex
         items-center
         justify-center

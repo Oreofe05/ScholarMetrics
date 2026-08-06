@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import AuthLayout from "../components/auth/AuthLayout";
 import { useAuth } from "../context/AuthContext";
+import GoogleButton from "../components/auth/GoogleButton";
 
 function Login() {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ function Login() {
             onClick={handleGoogleLogin}
             className="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200"
           >
-            G
+            <GoogleButton/>
           </button>
         </div>
 

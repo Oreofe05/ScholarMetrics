@@ -39,15 +39,17 @@ export const registerUser = async (req, res) => {
       },
     });
 
-    res.status(201).json({
-      message: "Account created successfully.",
-      token: generateToken(user.id),
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-      },
+    } catch (error) {
+
+    console.error("LOGIN ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      stack: error.stack,
     });
+
+  }
 
   } catch (error) {
   console.error("REGISTER ERROR:", error);
@@ -106,10 +108,12 @@ export const loginUser = async (req, res) => {
 
   } catch (error) {
 
-    console.error(error);
+    console.error("LOGIN ERROR:", error);
 
     res.status(500).json({
-      message: "Server Error",
+      success: false,
+      message: error.message,
+      stack: error.stack,
     });
 
   }
