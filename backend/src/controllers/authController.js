@@ -7,18 +7,14 @@ export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
 
-    // Check fields
     if (!fullName || !email || !password) {
       return res.status(400).json({
         message: "All fields are required.",
       });
     }
 
-    // Check existing user
     const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (existingUser) {
@@ -27,10 +23,8 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         fullName,
@@ -39,29 +33,26 @@ export const registerUser = async (req, res) => {
       },
     });
 
-    } catch (error) {
+    res.status(201).json({
+      message: "Account created successfully.",
+      token: generateToken(user.id),
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+      },
+    });
 
-    console.error("LOGIN ERROR:", error);
+  } catch (error) {
+    console.error("REGISTER ERROR:", error);
 
     res.status(500).json({
       success: false,
       message: error.message,
       stack: error.stack,
     });
-
   }
-
-  } catch (error) {
-  console.error("REGISTER ERROR:", error);
-
-  res.status(500).json({
-    success: false,
-    message: error.message,
-    stack: error.stack,
-  });
-}
-;
-
+};
 // Login User
 export const loginUser = async (req, res) => {
 
