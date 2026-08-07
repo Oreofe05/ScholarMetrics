@@ -35,6 +35,7 @@ export const updateProfile = async (req, res) => {
   try {
 
     const {
+      fullName,
       university,
       department,
       level,
@@ -42,8 +43,8 @@ export const updateProfile = async (req, res) => {
     } = req.body;
 
     const photo = req.file
-    ? `/uploads/${req.file.filename}`
-    : undefined;
+      ? `/uploads/${req.file.filename}`
+      : undefined;
 
     const updatedProfile = await prisma.user.update({
       where: {
@@ -51,6 +52,7 @@ export const updateProfile = async (req, res) => {
       },
 
       data: {
+        fullName,
         university,
         department,
         level,
@@ -62,7 +64,7 @@ export const updateProfile = async (req, res) => {
 
     res.json({
       message: "Profile updated successfully.",
-      profile: updatedProfile,
+      user: updatedProfile,
     });
 
   } catch (error) {

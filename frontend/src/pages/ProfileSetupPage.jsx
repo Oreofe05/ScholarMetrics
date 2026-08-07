@@ -54,6 +54,7 @@ const [form, setForm] = useState({
     e.preventDefault();
 
     if (
+      !form.fullName.trim() ||
       !form.university.trim() ||
       !form.department.trim() ||
       !form.level
@@ -65,6 +66,7 @@ const [form, setForm] = useState({
     try {
       const formData = new FormData();
 
+      formData.append("fullName", form.fullName);
       formData.append("university", form.university);
       formData.append("department", form.department);
       formData.append("level", form.level);
@@ -74,9 +76,13 @@ const [form, setForm] = useState({
         formData.append("photo", form.photo);
       }
 
-      await updateProfile(formData);
+      const data = await updateProfile(formData);
+
+      // Update AppContext
+      setStudentProfile(data.user);
 
       navigate("/dashboard");
+
     } catch (err) {
       console.error(err);
 

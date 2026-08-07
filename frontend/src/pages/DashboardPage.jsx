@@ -9,7 +9,7 @@ import { useApp } from "../context/AppContext";
 import { calculateAcademicHealth } from "../utils/calculateAcademicHealth";
 import { getTodaysFocus } from "../utils/getTodaysFocus";
 import { calculateStudyStreak } from "../utils/calculateStudyStreak";
-
+import { useAuth } from "../context/AuthContext";
 
 import { 
   Flame, 
@@ -21,25 +21,29 @@ import {
 } from "lucide-react";
 
 function Dashboard() {
-    const {
+  const { user } = useAuth();
+
+  const {
     studentProfile,
     uploadedCourses,
     assignments,
     cgpa,
   } = useApp();
 
-  const health = calculateAcademicHealth({ courses: uploadedCourses, assignments, cgpa,});
-
-  
+  const health = calculateAcademicHealth({
+    courses: uploadedCourses,
+    assignments,
+    cgpa,
+  });
 
   const streak = calculateStudyStreak(uploadedCourses);
-  const todaysFocus = getTodaysFocus(uploadedCourses);
-  const nextExam =
-  uploadedCourses
-    .filter(course => course.examDate)
-    .map(course => {
-      const today = new Date();
 
+  const todaysFocus = getTodaysFocus(uploadedCourses);
+
+  const nextExam = uploadedCourses
+    .filter((course) => course.examDate)
+    .map((course) => {
+      const today = new Date();
       const exam = new Date(course.examDate);
 
       const daysLeft = Math.ceil(
@@ -51,9 +55,8 @@ function Dashboard() {
         daysLeft,
       };
     })
-    .filter(item => item.daysLeft >= 0)
+    .filter((item) => item.daysLeft >= 0)
     .sort((a, b) => a.daysLeft - b.daysLeft)[0];
-
   return (
     <div className="space-y-6 bg-[#F8F9FD] min-h-screen p-2 md:p-4">
 
@@ -64,7 +67,7 @@ function Dashboard() {
             {studentProfile.department || "Department"} • {studentProfile.level || "Level"}
           </span>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mt-2">
-            Welcome back, {studentProfile.fullName || "Student"} 👋
+            Welcome back, {user?.fullName || studentProfile.fullName || "Student"} 👋
           </h1>
           <p className="text-sm text-slate-500">
             {studentProfile.university}
